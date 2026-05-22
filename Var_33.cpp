@@ -36,40 +36,77 @@ unsigned int custom_Fib(unsigned int& prev1, unsigned int& prev2, unsigned int& 
 }
 
 
+
 void printStatistics(const vector<unsigned int>& arr, const string& name) {
-    double sum = 0;
-    int n = arr.size();
     
+    // Среднее значение
+    double sum = 0;
+    int n = arr.size(); 
+    
+    // сумма
     for (int i = 0; i < n; i++) sum += arr[i];
+    
+    // Делим сумму на количество элементов. 
     double mean = sum / n;
     
+
+    // 2 Стандартное отклонение и коэф вариации
     double varianceSum = 0;
+    
+    // Дисперсия
     for (int i = 0; i < n; i++) {
         varianceSum += (arr[i] - mean) * (arr[i] - mean);
     }
+    
     double stdDev = sqrt(varianceSum / n);
+    
+    // Коэффициент вариации
     double cv = stdDev / mean;
     
-    // Хи-квадрат для 10 интервалов
+    // хи квадрат
+    
+    // Создаем 10 "корзин" (интервалов) для чисел и обнуляем их.
+    // [0-499], [500-999], [1000-1499] и т.д.
     int buckets[10] = {0};
+    
+    // Раскидываем все числа массива по этим 10 корзинам
     for (int i = 0; i < n; i++) {
+        // Формула вычисляет индекс от 0 до 9. 
+        // Например, число 1250 даст: (1250 * 10) / 5000 = 2 (попадет в 3-ю корзину)
         int index = (arr[i] * 10) / 5000; 
+        
+        // Предохранитель: если число ровно 5000 или больше, кладем его в последнюю корзину, 
+        // чтобы не было ошибки выхода за границы массива (index = 10)
         if (index >= 10) index = 9; 
-        buckets[index]++;
+        
+        buckets[index]++; // Увеличиваем счетчик чисел в нужной корзине
     }
     
+    // Сколько чисел МЫ ОЖИДАЕМ увидеть в каждой корзине при идеальной случайности
+    // Если чисел 1000, а корзин 10, то в каждой должно быть ровно по 100.
     double expected = n / 10.0;
-    double chiSquare = 0;
+    
+    double chiSquare = 0; // Переменная для накопления итогового "штрафа"
+    
+    // Сравниваем РЕАЛЬНОЕ количество чисел в корзинах с ОЖИДАЕМЫМ
     for (int i = 0; i < 10; i++) {
+        // Формула Пирсона: (Реальность - Ожидание)^2 / Ожидание
         chiSquare += ((buckets[i] - expected) * (buckets[i] - expected)) / expected;
     }
 
+    // ==========================================
+    // БЛОК 4: ВЫВОД РЕЗУЛЬТАТОВ В КОНСОЛЬ
+    // ==========================================
     cout << "Генератор: " << name << "\n";
     cout << "  Среднее: " << fixed << setprecision(2) << mean 
          << " | Отклонение: " << stdDev 
          << " | Коэфф. вариации: " << cv << "\n";
          
     cout << "  Хи-квадрат: " << chiSquare;
+    
+    // По таблице распределения Хи-квадрат для 9 степеней свободы (10 корзин - 1)
+    // и уровня значимости 0.05, критическое значение равно 16.92.
+    // Если наш "штраф" меньше этого числа — числа выпадали достаточно равномерно.
     if (chiSquare <= 16.92) {
         cout << " (<= 16.92, распределение равномерное)\n";
     } else {
@@ -93,6 +130,7 @@ void runAdvancedTests(const vector<unsigned int>& arr, const string& name) {
     cout << "  Битовые тесты:\n";
 
     // 1. Monobit Test
+    // Проверяет самую базовую вещь — количество нулей и единиц должно быть примерно одинаковым (как при броске идеальной монетки).
     int ones = 0;
     for (int b : bits) ones += b;
     int zeros = n - ones;
@@ -103,6 +141,7 @@ void runAdvancedTests(const vector<unsigned int>& arr, const string& name) {
     if (p_monobit > 0.01) passed++;
 
     // 2. Runs Test
+    //Суть: Проверяет, как часто нули и единицы сменяют друг друга.
     double pi = (double)ones / n;
     double p_runs = 0.0;
     if (abs(pi - 0.5) >= (2.0 / sqrt(n))) {
