@@ -6,6 +6,7 @@
 #include <ctime>   
 #include <set>     
 #include <iomanip>
+#include <chrono> // Добавлена библиотека для точного времени
 
 using namespace std;
 
@@ -228,44 +229,62 @@ int main() {
     cout << "\nРазмер Красно-Черного Дерева (уникальных чисел в Квадратичном методе): " 
          << rbt_storage.size() << "\n\n";
 
-    // Бенчмарк времени
+    // Бенчмарк времени (Замеры в микросекундах)
     cout << "Запуск бенчмарка производительности (сохранение в benchmark_prng.csv)...\n";
-    int sizes[] = {1000, 5000, 10000, 50000, 100000, 500000, 1000000};
+    
+    // Слегка увеличим размеры, 1000 чисел процессор щелкает за наносекунды
+    int sizes[] = {10000, 50000, 100000, 500000, 1000000, 5000000};
     ofstream results("benchmark_prng.csv");
     results << "Size,Quadratic,SplitAdd,FibonacciWeyl,StdRand\n";
+
+    // ГЛОБАЛЬНАЯ СУММА: Вынесем её сюда и распечатаем в конце.
+    // Теперь компилятор не имеет права удалять наши вычисления!
+    unsigned long long global_sum = 0; 
+    
+    // Количество повторений каждого теста, чтобы сгладить "тики" таймера Windows
+    const int RUNS = 50; 
 
     for (int n : sizes) {
         cout << "  Обработка N = " << n << "...\n";
         
-        unsigned long long sum = 0; // чтобы компилятор не вырезал пустые циклы при оптимизации
-        
         // 1. Квадратичный
-        clock_t start = clock();
-        for (int i = 0; i < n; i++) sum += kvadrat(state_qcg) % 5000;
-        clock_t end = clock();
-        double timeQCG = (double)(end - start) / CLOCKS_PER_SEC * 1000.0;
+        auto start = chrono::high_resolution_clock::now();
+        for (int r = 0; r < RUNS; r++) {
+            for (int i = 0; i < n; i++) global_sum += kvadrat(state_qcg) % 5000;
+        }
+        auto end = chrono::high_resolution_clock::now();
+        long long timeQCG = chrono::duration_cast<chrono::microseconds>(end - start).count() / RUNS;
 
         // 2. Разделение
-        start = clock();
-        for (int i = 0; i < n; i++) sum += drob(state_split) % 5000;
-        end = clock();
-        double timeSplit = (double)(end - start) / CLOCKS_PER_SEC * 1000.0;
+        start = chrono::high_resolution_clock::now();
+        for (int r = 0; r < RUNS; r++) {
+            for (int i = 0; i < n; i++) global_sum += drob(state_split) % 5000;
+        }
+        end = chrono::high_resolution_clock::now();
+        long long timeSplit = chrono::duration_cast<chrono::microseconds>(end - start).count() / RUNS;
 
         // 3. Фибоначчи + Вейль
-        start = clock();
-        for (int i = 0; i < n; i++) sum += custom_Fib(fw_prev1, fw_prev2, fw_weyl) % 5000;
-        end = clock();
-        double timeFW = (double)(end - start) / CLOCKS_PER_SEC * 1000.0;
+        start = chrono::high_resolution_clock::now();
+        for (int r = 0; r < RUNS; r++) {
+            for (int i = 0; i < n; i++) global_sum += custom_Fib(fw_prev1, fw_prev2, fw_weyl) % 5000;
+        }
+        end = chrono::high_resolution_clock::now();
+        long long timeFW = chrono::duration_cast<chrono::microseconds>(end - start).count() / RUNS;
 
         // 4. rand() из <cstdlib>
-        start = clock();
-        for (int i = 0; i < n; i++) sum += rand() % 5000;
-        end = clock();
-        double timeRand = (double)(end - start) / CLOCKS_PER_SEC * 1000.0;
+        start = chrono::high_resolution_clock::now();
+        for (int r = 0; r < RUNS; r++) {
+            for (int i = 0; i < n; i++) global_sum += rand() % 5000;
+        }
+        end = chrono::high_resolution_clock::now();
+        long long timeRand = chrono::duration_cast<chrono::microseconds>(end - start).count() / RUNS;
 
         results << n << "," << timeQCG << "," << timeSplit << "," << timeFW << "," << timeRand << "\n";
     }
 
     results.close();
+    
+    // ПЕЧАТАЕМ СУММУ В САМОМ КОНЦЕ, чтобы компилятор не вырезал циклы
+    cout << "\nБенчмарк завершен. Контрольная сумма: " << global_sum << "\n";
     return 0;
 }
