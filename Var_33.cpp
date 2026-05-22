@@ -24,14 +24,14 @@ unsigned int drob(unsigned int& state) {
 }
 
 // 3. 
-unsigned int custom_Fib(unsigned int& prev1, unsigned int& prev2, unsigned int& weyl) {
+unsigned int custom_Fib(unsigned int& prev1, unsigned int& prev2, unsigned int& b) {
     unsigned int current_fib = prev1 + prev2;
     prev1 = prev2;
     prev2 = current_fib;
     
-    weyl += 12345;
+    b += 12345;
     
-    return current_fib + weyl;
+    return current_fib + b;
 }
 
 
