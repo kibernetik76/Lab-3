@@ -6,7 +6,7 @@
 #include <ctime>   
 #include <set>     
 #include <iomanip>
-#include <chrono> // Добавлена библиотека для точного времени
+#include <chrono>
 
 using namespace std;
 
